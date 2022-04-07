@@ -1,4 +1,7 @@
 # Latent Diffusion Models
+MY EDITION OF Latent Diffusion + CLIP guid image generation.
+
+
 [arXiv](https://arxiv.org/abs/2112.10752) | [BibTeX](#bibtex)
 
 <p align="center">

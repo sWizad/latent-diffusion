@@ -1,1 +1,4 @@
-output/
+*.pyc
+outputs/
+models/ldm/text2img-large
+idea_list

@@ -18,9 +18,6 @@ MY EDITION OF Latent Diffusion + CLIP guid image generation.
 [Björn Ommer](https://hci.iwr.uni-heidelberg.de/Staff/bommer)<br/>
 \* equal contribution
 
-<p align="center">
-<img src=assets/modelfigure.png />
-</p>
 
 ## News
 ### April 2022

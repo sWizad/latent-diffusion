@@ -8,18 +8,13 @@ scale = 10 #@param {type: 'number'}
 ddim_steps =  50#@param {type: 'integer'}
 W = 256 #@param {type: 'integer'}
 H = 256 #@param {type: 'integer'}
-outdir = 'outputs/character' #@param {type: 'string'}
-prompt_list = [    "Sherlock Holmes",
-    "James Bond",
-    "Darth Vader",
-    "Sun Wukong",
-    "Xenomorph",
-    "John Wick",
-    "Godzilla",
-    "Wolverine",
-    "Yoda",
-    "Harry Potter",
-    "Mickey Mouse",
+outdir = 'outputs/Thinker_ldm' #@param {type: 'string'}
+prompt_list = [    
+"The thinker in style of Caspar David Friedrich",
+"The thinker in style of Picasso",
+"The thinker in style of Van Gogh",
+"The thinker in style of Leonardo da Vinci",
+"The thinker in style of Rembrandt",
 ]
 
 for prompt in prompt_list: # 

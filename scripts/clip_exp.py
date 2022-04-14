@@ -19,33 +19,7 @@ import pdb
 from drawer.DwtDrawer import DwtDrawer
 from drawer.LatentDrawer import LatentDrawer
 from drawer.utils import *
-
-#TODO list
-#change config system
-#set seed
-
-def prepare_clip(mode,device='cuda'):
-    cutn=64
-    cut_pow=1
-    quality_to_clip_models_table = {
-        'draft': 'ViT-B/32',
-        'normal': 'ViT-B/32,ViT-B/16',
-        'better': 'RN50,ViT-B/32,ViT-B/16',
-        'best': 'RN50x4,ViT-B/32,ViT-B/16'
-    }
-    clip_models = quality_to_clip_models_table[mode].split(",")
-    clip_models = [model.strip() for model in clip_models]
-    perceptors,cutoutSizeTable,cutoutsTable = {},{},{}
-    for clip_model in clip_models:
-        perceptor = clip.load(clip_model, jit=False)[0].eval().requires_grad_(False).to(device)
-        perceptors[clip_model] = perceptor
-
-        cut_size = perceptor.visual.input_resolution
-        cutoutSizeTable[clip_model] = cut_size
-        if not cut_size in cutoutsTable:    
-            make_cutouts = MakeCutouts(cut_size, cutn, cut_pow=cut_pow)
-            cutoutsTable[cut_size] = make_cutouts
-    return perceptors, cutoutSizeTable, cutoutsTable
+from scripts.simple_clip_guide import prepare_clip
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -119,23 +93,42 @@ if __name__ == "__main__":
     os.makedirs(outpath,exist_ok=True)
     promptxt = opt.prompt
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    #make_cutouts = MakeCutouts(224, 64, cut_pow=1)
+    transtt = transforms.Compose([
+        transforms.Resize(256),
+        transforms.ToTensor(),
+        ]),
+    int_img = Image.open('outputs/Rapunzel/0029.png')
+    upshape = transforms.Resize((512,512), interpolation = transforms.InterpolationMode.NEAREST) 
+    make_fixcutouts = MakeFixCutouts(224, 64, cut_pow=2)
+    with torch.no_grad():
+        t_img = transtt[0](int_img).cuda()
+        #t_img = upshape(t_img)
+        fixcut = make_fixcutouts(t_img[None])
+    grid = make_grid(fixcut, nrow=8)
+    grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
+    Image.fromarray(grid.astype(np.uint8)).save(os.path.join(outpath, f'abc.png'))
 
     perceptors,cutoutSizeTable,cutoutsTable = prepare_clip('draft')
     normalize = transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                                     std=[0.26862954, 0.26130258, 0.27577711])
     pMs = {}
+    fMs = {}
     for clip_model in perceptors: 
         perceptor = perceptors[clip_model]
         embed = perceptor.encode_text(clip.tokenize(opt.prompt).to(device)).float()
         pMs[clip_model] = Prompt(embed, 1, float('-inf')).to(device)
+        embed = perceptor.encode_image(normalize(fixcut)).float()
+        fMs[clip_model] = Prompt(embed, 1, float('-inf')).to(device)
 
     if True:
-        ims = DwtDrawer(device=device)
+        ims = DwtDrawer(int_img = transforms.Resize(256)(t_img), device=device)
+        #ims = DwtDrawer( device=device)
     else:
         ims = LatentDrawer(device=device)
 
     # A basic progress bar (using fastprogress)
-    bar = progress_bar(range(1300))
+    bar = progress_bar(range(1000))
     for i in bar:
         ims.optimizer.zero_grad()
         im = ims() # Get the image from the ImStack
@@ -145,7 +138,10 @@ if __name__ == "__main__":
             make_cutouts = cutoutsTable[cutoutSizeTable[clip_model]]
             iii = perceptor.encode_image(normalize(make_cutouts(im))).float() # Encode image (using multiple cutouts)
             loss = loss + pMs[clip_model](iii) # Calculate loss
+            #iii = perceptor.encode_image(normalize(make_fixcutouts(upshape(im)))).float()
+            #loss = loss + fMs[clip_model](iii) # Calculate loss
         loss.backward() # Backprop
         ims.optimizer.step() # Update
 
         if i % 20 == 0:   ims.save(os.path.join(outpath, f'{promptxt.replace(" ", "-")}.png'))
+        #pdb.set_trace()

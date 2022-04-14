@@ -5,7 +5,7 @@ ddim_eta = 0 #@param {type: 'number'}
 ddim_steps =  50#@param {type: 'integer'}
 outdir = 'outputs/Athena' #@param {type: 'string'}
 prompt_list = [    
-"Athena ",
+"Athena",
 "Athena Goddess",
 "Athena Lady",
 "Athena Divine Strike",

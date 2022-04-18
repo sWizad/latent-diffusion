@@ -2,9 +2,10 @@ import os
 
 #@title Generate
 seed = 1
-outdir = 'outputs/greek_goddess' #@param {type: 'string'}
+outdir = 'outputs/test' #@param {type: 'string'}
 prompt_list = [    
-"Goddess Persephone",
+"Little Mermaid",
+"naked girl",
 ]
 
 for prompt in prompt_list: # 

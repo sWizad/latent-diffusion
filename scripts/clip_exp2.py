@@ -54,7 +54,7 @@ def setup_parser():
     )
     parser.add_argument( "--init_image",
         type=str,
-        default=None,
+        default='outputs/test/0002.png',
         help="init_image",
     )
     parser.add_argument( "--save_interval",
@@ -75,17 +75,17 @@ def setup_parser():
 # Weights can be negatives, useful for discouraging specific artifacts
 texts = [
     {
-        "text": "Hades",
+        "text": "Little Mermaid",
         "weight": 1.0,
     },{
         "text": "Beautiful and detailed fantasy painting.",
         "weight": 0.2,
-     },{
-        "text": "Full body.",
-        "weight": 0.1,
-    #},{ # Improves contrast, object coherence, and adds a nice depth of field effect
-    #    "text": "Rendered in unreal engine, trending on artstation.",
-    #    "weight": 0.2,
+    # },{
+    # #     "text": "Full body.",
+    # #     "weight": 0.1,
+    },{ # Improves contrast, object coherence, and adds a nice depth of field effect
+        "text": "Rendered in unreal engine, trending on artstation.",
+        "weight": 0.2,
     # },{
     # #     "text": "speedpainting",
     # #     "weight": 0.1,
@@ -158,6 +158,11 @@ import clip
 from drawer.utils import *
 from drawer.PyramidDrawer import PyramidDrawer 
 from drawer.WaveletDrawer import WaveletDrawer
+
+from models.Sketch.models import create_model
+from models.Sketch.baseOption import *
+
+import lpips
 import pdb
 
 
@@ -287,8 +292,22 @@ def lossTV(image, strength):
   loss = (X + Y) * 0.5 * strength
   return loss
 
+def get_sk_loss(int_image):
+    opt = SketOptions()
+    sket_model = create_model(opt)
+    loss_fn = lpips.LPIPS(net='vgg').cuda()
+    with torch.no_grad():
+      sk_img = sket_model.netG(int_image)
+    def loss_fn(image):
+        im_sket = sket_model.netG(image)
+        return ((sk_img - im_sket)**2).mean() * 3
+        #vgg = loss_fn.scaling_layer(sk_img)
+        #return loss_fn(sk_img, im_sket).mean() * 3
+    return loss_fn
 
-def main():
+
+def main():  ## This is an experiment on Sketch image guide
+
     args = setup_parser()
     os.makedirs(args.outdir+"/images",exist_ok=True)
     if args.prompt != "":
@@ -305,6 +324,10 @@ def main():
         )
     drawer = PyramidDrawer(stages,args.init_image,color_space=args.color_space)
     #drawer = WaveletDrawer(stages,args.init_image,color_space=args.color_space)
+
+    image = drawer.loadImage(args.init_image)
+    image = torch.nn.functional.interpolate(image, size=drawer.dims[-1], mode='bilinear', align_corners=False)
+    sk_loss = get_sk_loss(image)
     for n, stage in enumerate(drawer.stages): 
         stage["n"] = n
         if n > 0: drawer.update_optim(stage)
@@ -316,6 +339,7 @@ def main():
                 image = drawer.paramsToImage(drawer.params_pyramid)
                 losses += lossClip( image, stage["cuts"], stage["noise"], perceptors )
                 losses += [lossTV( image, stage["denoise"] )]
+                losses += [sk_loss(image)]
 
                 loss_total = sum(losses).sum()
                 drawer.optimizer.zero_grad(set_to_none=True)

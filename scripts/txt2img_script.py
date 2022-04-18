@@ -8,13 +8,11 @@ scale = 10 #@param {type: 'number'}
 ddim_steps =  50#@param {type: 'integer'}
 W = 256 #@param {type: 'integer'}
 H = 256 #@param {type: 'integer'}
-outdir = 'outputs/Thinker_ldm' #@param {type: 'string'}
+outdir = 'outputs/nsfw_ldm' #@param {type: 'string'}
 prompt_list = [    
-"The thinker in style of Caspar David Friedrich",
-"The thinker in style of Picasso",
-"The thinker in style of Van Gogh",
-"The thinker in style of Leonardo da Vinci",
-"The thinker in style of Rembrandt",
+"nude scene",
+"nude with neakers",
+"sexy girl in boots",
 ]
 
 for prompt in prompt_list: # 

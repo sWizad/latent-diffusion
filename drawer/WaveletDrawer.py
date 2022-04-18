@@ -28,7 +28,7 @@ aspect_ratio = (1,1) #(4, 3)#(3, 4)
 add_global_color = True
 
 # Max dim of the final output image.
-max_dim = 800
+max_dim = 512
 
 # Number of layers at different resolutions combined into the final image
 # "optimal" number is log2(max_dim / max(aspect_ratio))
@@ -69,7 +69,7 @@ class WaveletDrawer(nn.Module):
                 Ys = [0.5*Yl_in] + [0.5*Y for Y in Yh_in]
                 Ys = [torch.nn.parameter.Parameter( y, requires_grad=True) for y in Ys]
                 params_pyramid.append(Ys)
-        else: #TODO init without int img
+        else:
             image = torch.zeros([1,3]+self.dims[-1]).cuda()
             img_channels = self.imageToParams(image)
             for channel in range(3):
@@ -218,7 +218,7 @@ class WaveletDrawer(nn.Module):
         
         for i in range(len(lr_scales)):
             if self.color_space == "YCoCg":
-                params.append({"params": [params_pyramid[0][i]], "lr":stage["lr_luma"]*10 * lr_scales[i], "weight_decay":stage["decay_luma"]})
+                params.append({"params": [params_pyramid[0][i]], "lr":stage["lr_luma"]*5 * lr_scales[i], "weight_decay":stage["decay_luma"]})
                 params.append({"params": [params_pyramid[1][i]], "lr":stage["lr_chroma"]*10 * lr_scales[i], "weight_decay":stage["decay_chroma"]})
                 params.append({"params": [params_pyramid[2][i]], "lr":stage["lr_chroma"]*10 * lr_scales[i], "weight_decay":stage["decay_chroma"]})
             elif self.color_space == "RGB":
